@@ -1,4 +1,8 @@
 const list = document.getElementById("list");
+const searchInput = document.getElementById("search");
+const lowStockFilter = document.getElementById("lowStockFilter");
+
+let itemsCache = []; // store all items to enable search & filter
 
 async function loadItems() {
   try {
@@ -6,12 +10,29 @@ async function loadItems() {
     if (!res.ok) throw new Error("Failed to load items");
     const items = await res.json();
 
-    list.innerHTML = "";
-    items.forEach(item => {
+    itemsCache = items; // update cache
+    renderList();
+  } catch (err) {
+    console.error(err);
+    alert("Error loading items. Please try again.");
+  }
+}
+
+function renderList() {
+  const searchTerm = searchInput.value.toLowerCase();
+  const filterLowStock = lowStockFilter.checked;
+
+  list.innerHTML = "";
+  itemsCache
+    .filter(item => item.name.toLowerCase().includes(searchTerm))
+    .filter(item => !filterLowStock || item.quantity < 5)
+    .forEach(item => {
       const li = document.createElement("li");
       li.innerHTML = `
-        ${item.name} - <strong>${item.quantity}</strong>
-        ${item.quantity < 5 ? "⚠ LOW STOCK" : ""}
+        <span class="${item.quantity < 5 ? 'low-stock' : ''}">
+          ${item.name} - <strong>${item.quantity}</strong>
+          ${item.quantity < 5 ? "⚠ LOW STOCK" : ""}
+        </span>
         <button onclick="changeQty('${item._id}', 1)">➕</button>
         <button onclick="changeQty('${item._id}', -1)">➖</button>
         <button onclick="deleteItem('${item._id}')">❌</button>
@@ -19,23 +40,15 @@ async function loadItems() {
       `;
       list.appendChild(li);
     });
-  } catch (err) {
-    console.error(err);
-    alert("Error loading items. Please try again.");
-  }
 }
 
+// Existing addItem, changeQty, updateItem, deleteItem functions remain the same
 async function addItem() {
   const name = document.getElementById("name").value.trim();
   const quantity = parseInt(document.getElementById("quantity").value);
 
-  // Validation
-  if (!name) {
-    return alert("Item name cannot be empty");
-  }
-  if (isNaN(quantity) || quantity < 0) {
-    return alert("Quantity must be a non-negative number");
-  }
+  if (!name) return alert("Item name cannot be empty");
+  if (isNaN(quantity) || quantity < 0) return alert("Quantity must be a non-negative number");
 
   try {
     const res = await fetch("/api/items", {
@@ -43,8 +56,8 @@ async function addItem() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, quantity })
     });
-
     if (!res.ok) throw new Error("Failed to add item");
+
     document.getElementById("name").value = "";
     document.getElementById("quantity").value = "";
     loadItems();
@@ -71,8 +84,8 @@ async function changeQty(id, amount) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quantity: newQty })
     });
-
     if (!updateRes.ok) throw new Error("Failed to update item");
+
     loadItems();
   } catch (err) {
     console.error(err);
@@ -90,20 +103,17 @@ async function updateItem(id) {
     if (!item) return alert("Item not found");
 
     let newQty = prompt("Please enter updated quantity:", item.quantity);
-    if (newQty === null) return; // user canceled
+    if (newQty === null) return;
     newQty = parseInt(newQty);
-
-    if (isNaN(newQty) || newQty < 0) {
-      return alert("Quantity must be a non-negative number");
-    }
+    if (isNaN(newQty) || newQty < 0) return alert("Quantity must be a non-negative number");
 
     const updateRes = await fetch(`/api/items/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quantity: newQty })
     });
-
     if (!updateRes.ok) throw new Error("Failed to update item");
+
     loadItems();
   } catch (err) {
     console.error(err);
@@ -121,5 +131,9 @@ async function deleteItem(id) {
     alert("Error deleting item. Please try again.");
   }
 }
+
+// Event listeners for search & filter
+searchInput.addEventListener("input", renderList);
+lowStockFilter.addEventListener("change", renderList);
 
 loadItems();

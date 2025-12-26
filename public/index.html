@@ -1,17 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Tiny Inventory</title>
-  <link rel="stylesheet" href="style.css">
+    <title>Tiny Inventory</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>📦 Tiny Inventory</h1>
-  <input id="name" placeholder="Item name">
-  <input id="quantity" type="number" placeholder="Quantity">
-  <button onclick="addItem()">Add</button>
+    <h1>📦 Tiny Inventory</h1>
 
-  <ul id="list"></ul>
+    <!-- Search by item name -->
+    <input id="search" placeholder="Search item name">
 
-  <script src="script.js"></script>
+    <!-- Filter low stock items -->
+    <label>
+        <input type="checkbox" id="lowStockFilter">
+        Show Low Stock Only
+    </label>
+
+    <!-- Add new item -->
+    <input id="name" placeholder="Item name">
+    <input id="quantity" type="number" placeholder="Quantity">
+    <button onclick="addItem()">Add</button>
+
+    <!-- Inventory list -->
+    <ul id="list"></ul>
+
+    <script src="script.js"></script>
 </body>
 </html>
